@@ -1,50 +1,58 @@
 # app.py
 from flask import Flask, request, jsonify
+from db import Db
+
 app = Flask(__name__)
+db = Db()
 
-@app.route('/getmsg/', methods=['GET'])
-def respond():
+
+@app.route('/get_reservation/', methods=['GET'])
+def get_reservation():
     # Retrieve the name from url parameter
-    name = request.args.get("name", None)
-
+    res_id = request.args.get("id", None)
+    result = {"DATA": {}, "STATUS": "Fail"}
     # For debugging
-    print(f"got name {name}")
+    print(f"got id {res_id}")
 
-    response = {}
-
-    # Check if user sent a name at all
-    if not name:
-        response["ERROR"] = "no name found, please send a name."
+    # Check if user sent an id at all
+    if not res_id:
+        result["ERROR"] = "no id found, please send an id."
     # Check if the user entered a number not a name
-    elif str(name).isdigit():
-        response["ERROR"] = "name can't be numeric."
-    # Now the user entered a valid name
+    elif not str(res_id).isdigit():
+        result["ERROR"] = "id must be numeric."
+
+    # Now the user entered a valid id
     else:
-        response["MESSAGE"] = f"Welcome {name} to our awesome platform!!"
+        result = db.get_reservation(res_id)
 
-    # Return the response in json format
-    return jsonify(response)
+    # Return result as json
+    return jsonify(result)
 
-@app.route('/post/', methods=['POST'])
+
+@app.route('/set_reservation/', methods=['POST'])
 def post_something():
-    param = request.form.get('name')
-    print(param)
-    # You can add the test cases you made in the previous function, but in our case here you are just testing the POST functionality
-    if param:
-        return jsonify({
-            "Message": f"Welcome {name} to our awesome platform!!",
-            # Add this option to distinct the POST request
-            "METHOD" : "POST"
-        })
-    else:
-        return jsonify({
-            "ERROR": "no name found, please send a name."
-        })
+    json_data = request.get_json()
+    hotel = json_data['hotel_id']
+    arrive = json_data['arrival_date']
+    depart = json_data['departure_date']
+    room = json_data['room_type']
+
+    result = {"STATUS": "Fail", "METHOD": "POST"}
+
+    #print(f"Got:\n hotel: {hotel}\n arrival: {arrive}\n departure: {depart}\n room: {room}")
+
+    #if not (hotel & arrive & depart & room):
+    #    result["ERROR"] = "Make sure all parameters delivered (hotel_id/arrival_date/departure_date/room_type)."
+    #    return result
+    if db.isexist('hotels', 'hotelid', '{}'.format(hotel)):
+       pass
+    return jsonify(result)
 
 # A welcome message to test our server
 @app.route('/')
 def index():
     return "<h1>Welcome to our server !!</h1>"
+
 
 if __name__ == '__main__':
     # Threaded option to enable multiple instances for multiple user access support
