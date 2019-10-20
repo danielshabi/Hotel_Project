@@ -24,9 +24,9 @@ class Db:
         :return: (bool) True if succeed | False if Failed
         """
         try:
-            self.conn = psycopg2.connect(database=os.environ['DB_HOST'], user=os.environ["DB_USER"],
-                                         password=os.environ["DB_PASS"], host=os.environ["DB_HOST"],
-                                         port=os.environ["DB_PORT"])
+            self.conn = psycopg2.connect(database=os.environ.get('DB_NAME'), user=os.environ.get("DB_USER"),
+                                         password=os.environ.get("DB_PASS"), host=os.environ.get("DB_HOST"),
+                                         port=os.environ.get("DB_PORT"))
             self.db = self.conn.cursor()
             return True
         except (Exception, psycopg2.Error) as e:
