@@ -47,6 +47,13 @@ def set_reservation_validation(json_data, db):
         result["ERROR"] = "Incorrect departure date format, should be MM/DD/YYYY"
         return result
 
+    if (datetime.datetime.strptime(arrive, '%m/%d/%Y').date() >= datetime.datetime.strptime(depart, '%m/%d/%Y').date())\
+        or (datetime.datetime.strptime(arrive, '%m/%d/%Y').date() <= datetime.datetime.today().date()) \
+            or (datetime.datetime.strptime(depart, '%m/%d/%Y').date() <= datetime.datetime.today().date()):
+        result["ERROR"] = "Error: please make sure the arrival date is at least one day before departure and that the" \
+                          " reservation is in the future and not today or in the past"
+        return result
+
     if type(room) is int:
         result["ERROR"] = "room type can't be numeric."
         return result
