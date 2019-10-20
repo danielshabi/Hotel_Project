@@ -1,6 +1,7 @@
 # app.py
 from flask import Flask, request, jsonify
 from db import Db
+import utils
 
 app = Flask(__name__)
 db = Db()
@@ -8,50 +9,41 @@ db = Db()
 
 @app.route('/get_reservation/', methods=['GET'])
 def get_reservation():
-    # Retrieve the name from url parameter
+    # Retrieve the id from url parameter
     res_id = request.args.get("id", None)
-    result = {"DATA": {}, "STATUS": "Fail"}
-    # For debugging
-    print(f"got id {res_id}")
-
-    # Check if user sent an id at all
-    if not res_id:
-        result["ERROR"] = "no id found, please send an id."
-    # Check if the user entered a number not a name
-    elif not str(res_id).isdigit():
-        result["ERROR"] = "id must be numeric."
-
-    # Now the user entered a valid id
-    else:
-        result = db.get_reservation(res_id)
-
+    # Run Validation Code
+    result = utils.get_reservation_validation(res_id=res_id, db=db)
     # Return result as json
     return jsonify(result)
 
 
 @app.route('/set_reservation/', methods=['POST'])
-def post_something():
+def set_reservation():
+    # Retrieve the parameters as dict from user's json
     json_data = request.get_json()
-    hotel = json_data['hotel_id']
-    arrive = json_data['arrival_date']
-    depart = json_data['departure_date']
-    room = json_data['room_type']
 
-    result = {"STATUS": "Fail", "METHOD": "POST"}
+    # Run Validation Code
+    result = utils.set_reservation_validation(json_data=json_data, db=db)
 
-    #print(f"Got:\n hotel: {hotel}\n arrival: {arrive}\n departure: {depart}\n room: {room}")
-
-    #if not (hotel & arrive & depart & room):
-    #    result["ERROR"] = "Make sure all parameters delivered (hotel_id/arrival_date/departure_date/room_type)."
-    #    return result
-    if db.isexist('hotels', 'hotelid', '{}'.format(hotel)):
-       pass
+    # Return result as json
     return jsonify(result)
 
-# A welcome message to test our server
+
+@app.route('/cancel_reservation/', methods=['POST'])
+def cancel_reservation():
+    # Retrieve the id from url parameter
+    res_id = request.args.get('id')
+
+    # Run Validation Code
+    result = utils.cancel_reservation_validation(res_id=res_id, db=db)
+
+    # Return result as json
+    return jsonify(result)
+
+# Test our server State
 @app.route('/')
 def index():
-    return "<h1>Welcome to our server !!</h1>"
+    return "<h1>Server Is Running!</h1>"
 
 
 if __name__ == '__main__':
