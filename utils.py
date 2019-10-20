@@ -56,7 +56,7 @@ def set_reservation_validation(json_data, db):
         return result
 
     room_count = db.get_room_count(hotel, room)
-    if room_count is None:
+    if room_count is False:
         result["ERROR"] = f"The room type {room} is not exists in hotel id: {hotel}."
         return result
 

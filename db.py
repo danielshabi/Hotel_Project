@@ -7,6 +7,8 @@ class Db:
         self.cfg = yaml.load(open(r'setting.yaml'), Loader=yaml.Loader)
         self.conn = None
         self.db = None
+        self.error = {"STATUS": "FAILED"}
+        self.success = {"STATUS": "SUCCESS"}
         if self.set_db_connection():
             self.close_db_connection()
             print("Database Connection Checked Successfully")
@@ -32,85 +34,61 @@ class Db:
         if self.conn is not None:
             self.conn.close()
 
-    def get_reservation(self, res_id):
-        result = {
-            "DATA": {},
-            "STATUS": "Fail"
-        }
-        if self.set_db_connection():
-
-            query = "SELECT * FROM reservations where reservationid = {}".format(res_id)
-            try:
-                self.db.execute(query)
-            except (Exception, psycopg2.Error) as e:
-                print(f"Failed in get query: {e}")
-                self.close_db_connection()
-                result["ERROR"] = "Failed in query, please make sure the id parameter is OK"
-                return result
-            rows = self.db.fetchall()
-            if len(rows) < 1:
-                self.close_db_connection()
-                result["ERROR"] = f"There is no reservation with id: {res_id} ."
-                return result
-            rows = rows[0]
-            result = {
-                "DATA": {
-                    "ID": rows[0],
-                    "Hotel ID": rows[1],
-                    "Arrival Date": rows[2],
-                    "Departure Date": rows[3],
-                    "Status": rows[4],
-                    "Room Type": rows[5]
-                },
-                "STATUS": "Success"
-            }
-            self.close_db_connection()
-            return result
-        else:
-            result["ERROR"] = f"There is an Error connecting to to the db, please try again later."
-            return result
-
-    def exec_query(self, query, result=None):
+    def exec_query(self, query):
 
         try:
             self.db.execute(query)
         except (Exception, psycopg2.Error) as e:
             print(f"Failed in query: {e}")
             self.close_db_connection()
-            if result is None:
-                return False
-            else:
-                result["ERROR"] = "Failed in query"
-                return result
+            result = self.error.copy()
+            result["ERROR"] = "Failed in query, make sure all parameters are ok"
+            return False, result
         rows = self.db.fetchall()
         if len(rows) < 1:
             self.close_db_connection()
-            if result is None:
-                return False
+            result = self.error.copy()
+            result["ERROR"] = "There is no rows that match the parameters provided"
+            return False, result
+        else:
+            return True, rows
+
+    def get_reservation(self, res_id):
+
+        if self.set_db_connection():
+
+            query = "SELECT * FROM reservations where reservationid = {}".format(res_id)
+            status, result = self.exec_query(query=query)
+            if status is False:
+                return result
             else:
-                result["ERROR"] = "There is no rows that match the values provided"
+                rows = result[0]
+                result = {
+                    "DATA": {
+                        "ID": rows[0],
+                        "Hotel ID": rows[1],
+                        "Arrival Date": rows[2],
+                        "Departure Date": rows[3],
+                        "Status": rows[4],
+                        "Room Type": rows[5]
+                    },
+                    "STATUS": "SUCCESS"
+                }
+                self.close_db_connection()
                 return result
         else:
-            self.close_db_connection()
-            return rows
+            result = self.error.copy()
+            result["ERROR"] = f"There is an Error connecting to to the db, please try again later."
+            return result
 
     def hotel_exist(self, hotel):
         if self.set_db_connection():
 
             query = "SELECT * FROM hotels where hotelid= {}".format(hotel)
-            try:
-                self.db.execute(query)
-            except (Exception, psycopg2.Error) as e:
-                print(f"Failed in hotel query: {e}")
+            status, result = self.exec_query(query=query)
+            if status:
                 self.close_db_connection()
-                return False
-            rows = self.db.fetchall()
-            if len(rows) < 1:
-                self.close_db_connection()
-                return False
-            else:
-                self.close_db_connection()
-                return True
+            return status
         else:
             print(f"There is an Error connecting to to the db, please try again later.")
             return False
@@ -120,19 +98,12 @@ class Db:
 
             query = "SELECT (rooms->>{}) FROM hotels where hotelid= {} and (rooms->{}) IS NOT NULL"\
                 .format(f"'{room.lower()}'", hotel, f"'{room.lower()}'")
-            try:
-                self.db.execute(query)
-            except (Exception, psycopg2.Error) as e:
-                print(f"Failed in room count query: {e}")
+            status, result = self.exec_query(query=query)
+            if status:
                 self.close_db_connection()
-                return None
-            rows = self.db.fetchall()
-            if len(rows) < 1:
-                self.close_db_connection()
-                return None
+                return int(result[0][0])
             else:
-                self.close_db_connection()
-                return int(rows[0][0])
+                return False
         else:
             print(f"There is an Error connecting to to the db, please try again later.")
             return None
@@ -185,37 +156,31 @@ class Db:
             return False
 
     def cancel_reservation(self, res_id):
-        result = {"STATUS": "Fail", "METHOD": "POST"}
-        success = {"STATUS": "Success", "METHOD": "POST"}
+        success = self.success.copy()
         if self.set_db_connection():
             query = "SELECT * FROM reservations where reservationid = {}".format(res_id)
-            try:
-                self.db.execute(query)
-            except (Exception, psycopg2.Error) as e:
-                print(f"Failed in cancel query: {e}")
+            status, result = self.exec_query(query=query)
+            if status is False:
+                return result
+            else:
+                if result[0][4] == "Cancelled":
+                    result = self.error.copy()
+                    result["ERROR"] = f"ID: {res_id} already cancelled"
+                    self.close_db_connection()
+                    return result
+                query = "Update reservations set status = 'Cancelled' where reservationid={}".format(res_id)
+                try:
+                    self.db.execute(query)
+                    self.conn.commit()
+                    print("Reservation Cancelled Successfully")
+                except (Exception, psycopg2.Error) as e:
+                    print(f"Failed in create query: {e}")
+                    self.close_db_connection()
+                    result = self.error.copy()
+                    result["ERROR"] = "Request Failed for unknown reason"
+                    return result
                 self.close_db_connection()
-                result["ERROR"] = "Failed in query"
-                return result
-            rows = self.db.fetchall()
-            if len(rows) < 1:
-                self.close_db_connection()
-                result["ERROR"] = f"No ID: {res_id}"
-                return result
-            if rows[0][4] == "Cancelled":
-                result["ERROR"] = f"ID: {res_id} already cancelled"
-                return result
-            query = "Update reservations set status = 'Cancelled' where reservationid={}".format(res_id)
-            try:
-                self.db.execute(query)
-                self.conn.commit()
-                print("Reservation Cancelled Successfully")
-            except (Exception, psycopg2.Error) as e:
-                print(f"Failed in create query: {e}")
-                self.close_db_connection()
-                result["ERROR"] = "Request Failed for unknown reason"
-                return result
-            self.close_db_connection()
-            return success
+                return success
         else:
             print(f"There is an Error connecting to to the db, please try again later.")
             return False
