@@ -7,7 +7,6 @@ class Db:
     DB Class for managing app's db connections actions
     """
     def __init__(self):
-        # self.cfg = yaml.load(open(r'setting.yaml'), Loader=yaml.Loader)
         self.conn = None
         self.db = None
         self.error = {"STATUS": "FAILED"}
