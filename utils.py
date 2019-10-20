@@ -2,6 +2,14 @@ import datetime
 
 
 def check_date(arrive, depart):
+    """
+    Check if arrival date and departure date are valid dates.
+    Check if arrival date is before departure date.
+    Check both dates are in future
+    :param arrive: (string) arrival date
+    :param depart:(string) departure date
+    :return: (bool) False/True, (string) error if there is one
+    """
     try:
         datetime.datetime.strptime(arrive, '%m/%d/%Y')
     except ValueError:
@@ -24,6 +32,12 @@ def check_date(arrive, depart):
 
 
 def get_reservation_validation(res_id, db):
+    """
+    Function to validate the "get_reservation" app's endpoint and return client response
+    :param res_id: (string) client's supplied reservation id
+    :param db: (DB Class) db connection
+    :return: (dict) client response
+    """
     result = {"DATA": {}, "STATUS": "FAILED"}
 
     # Check if user sent an id at all
@@ -41,6 +55,12 @@ def get_reservation_validation(res_id, db):
 
 
 def set_reservation_validation(json_data, db):
+    """
+    Function to validate the "set_reservation" app's endpoint and return client response
+    :param json_data: (dict) client's supplied json
+    :param db: (DB Class) db connection
+    :return: (dict) client response
+    """
     result = {"STATUS": "FAILED", "DATA": {}}
     success = {"STATUS": "SUCCESS"}
 
@@ -90,6 +110,12 @@ def set_reservation_validation(json_data, db):
 
 
 def cancel_reservation_validation(res_id, db):
+    """
+    Function to validate the "cancel_reservation" app's endpoint and return client response
+    :param res_id: (string) client's supplied reservation id
+    :param db: (DB Class) db connection
+    :return: (dict) client response
+    """
     result = {"STATUS": "FAILED"}
     success = {"STATUS": "SUCCESS"}
 
@@ -104,6 +130,14 @@ def cancel_reservation_validation(res_id, db):
 
 
 def list_room_validation(hotel, arrive, depart, db):
+    """
+    Function to validate the "list_room" app's endpoint and return client response
+    :param hotel: (string) client's supplied hotel id
+    :param arrive: (string) client's supplied arrival date
+    :param depart: (string) client's supplied departure date
+    :param db: (DB Class) db connection
+    :return: (dict) client response
+    """
     result = {"DATA": {}, "STATUS": "FAILED"}
     success = {"STATUS": "SUCCESS"}
 

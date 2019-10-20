@@ -3,6 +3,9 @@ import yaml
 
 
 class Db:
+    """
+    DB Class for managing app's db connections actions
+    """
     def __init__(self):
         self.cfg = yaml.load(open(r'setting.yaml'), Loader=yaml.Loader)
         self.conn = None
@@ -16,6 +19,10 @@ class Db:
             raise ValueError("Database Connection Check Failed")
 
     def set_db_connection(self):
+        """
+        Setting all db connection variables(conn,db)
+        :return: (bool) True if succeed | False if Failed
+        """
         try:
             self.conn = psycopg2.connect(database=self.cfg["DB_NAME"], user=self.cfg["DB_USER"],
                                          password=self.cfg["DB_PASS"], host=self.cfg["DB_HOST"],
@@ -29,13 +36,20 @@ class Db:
             return False
 
     def close_db_connection(self):
+        """
+        Resetting all db connection variables(conn,db)
+        """
         if self.db is not None:
             self.db.close()
         if self.conn is not None:
             self.conn.close()
 
     def exec_query(self, query):
-
+        """
+        Execute Query on DB
+        :param query: (string) query to run
+        :return: (bool) succeeded and got at least one row , (dict) client error response if False | (dict) query result
+        """
         try:
             self.db.execute(query)
         except (Exception, psycopg2.Error) as e:
@@ -54,7 +68,11 @@ class Db:
             return True, rows
 
     def get_reservation(self, res_id):
-
+        """
+        Get reservation info by id
+        :param res_id: (string) id of reservation
+        :return: (dict) client response
+        """
         if self.set_db_connection():
 
             query = "SELECT * FROM reservations where reservationid = {}".format(res_id)
@@ -82,6 +100,11 @@ class Db:
             return result
 
     def hotel_exist(self, hotel):
+        """
+        Check if hotel with specific id exists
+        :param hotel: (int/string) hotel id
+        :return: (bool) True/False
+        """
         if self.set_db_connection():
 
             query = "SELECT * FROM hotels where hotelid= {}".format(hotel)
@@ -94,6 +117,12 @@ class Db:
             return False
 
     def get_room_count(self, hotel, room):
+        """
+        Get How many of specific room exists in hotel
+        :param hotel: (string/int) hotel id
+        :param room: (string) room name
+        :return: False if not found or error | (int)_number of rooms if True
+        """
         if self.set_db_connection():
 
             query = "SELECT (rooms->>{}) FROM hotels where hotelid= {} and (rooms->{}) IS NOT NULL"\
@@ -106,9 +135,18 @@ class Db:
                 return False
         else:
             print(f"There is an Error connecting to to the db, please try again later.")
-            return None
+            return False
 
     def room_avail(self, hotel, room, room_max, arrive, depart):
+        """
+        Check if room avail in time range
+        :param hotel: (int/string) hotel id to search by
+        :param room: (int/string) room to search
+        :param room_max: (int) how many rooms like this exists
+        :param arrive: (string) from date
+        :param depart: (string) to date
+        :return: (bool) True/False
+        """
         if self.set_db_connection():
 
             query = "SELECT COUNT(roomtype) FROM reservations WHERE hotelid={} " \
@@ -137,6 +175,14 @@ class Db:
             return False
 
     def create_reservation(self, hotel, arrive, depart, room):
+        """
+        Create reservation
+        :param hotel: (string) hotel to order in
+        :param arrive: (string) arrival date
+        :param depart: (string) departure date
+        :param room: (string) room to order
+        :return: (int) reservation id if Succeed | (bool) false if failed
+        """
         if self.set_db_connection():
             query = "INSERT INTO reservations (hotelid, arrivaldate, departuredate, roomtype, status) " \
                     "VALUES ({}, '{}', '{}', '{}','Active') RETURNING reservationid".format(hotel, arrive, depart, room)
@@ -156,6 +202,11 @@ class Db:
             return False
 
     def cancel_reservation(self, res_id):
+        """
+        Cancell reservation
+        :param res_id: (string) reservation id to cancel
+        :return: (dict) client's response
+        """
         success = self.success.copy()
         if self.set_db_connection():
             query = "SELECT * FROM reservations where reservationid = {}".format(res_id)
@@ -186,6 +237,12 @@ class Db:
             return False
 
     def inventory(self, hotel, date):
+        """
+        list inventory of hotel (how many occupied and available on each room on day supplied)
+        :param hotel: (string/int) hotel id
+        :param date: (string) date to check in
+        :return: (dict) client's response
+        """
         data = {}
         if self.set_db_connection():
             query = "SELECT rooms FROM hotels where hotelid={}".format(hotel)

@@ -6,7 +6,9 @@ import utils
 app = Flask(__name__)
 db = Db()
 
-
+"""
+Endpoint For Getting Reservations By Id
+"""
 @app.route('/get_reservation/', methods=['GET'])
 def get_reservation():
     # Retrieve the id from url parameter
@@ -17,6 +19,9 @@ def get_reservation():
     return jsonify(result)
 
 
+"""
+Endpoint For Creating New Reservation
+"""
 @app.route('/set_reservation/', methods=['POST'])
 def set_reservation():
     # Retrieve the parameters as dict from user's json
@@ -29,6 +34,9 @@ def set_reservation():
     return jsonify(result)
 
 
+"""
+Endpoint For Cancelling Reservation
+"""
 @app.route('/cancel_reservation/', methods=['POST'])
 def cancel_reservation():
     # Retrieve the id from url parameter
@@ -41,6 +49,9 @@ def cancel_reservation():
     return jsonify(result)
 
 
+"""
+Endpoint For Listing Hotel's Inventory
+"""
 @app.route('/list_room/', methods=['GET'])
 def list_room():
     # Retrieve the id from url parameter
@@ -55,7 +66,9 @@ def list_room():
     return jsonify(result)
 
 
-# Test our server State
+"""
+Endpoint For Checking Server Up
+"""
 @app.route('/')
 def index():
     return "<h1>Server Is Running!</h1>"
