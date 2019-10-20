@@ -40,6 +40,21 @@ def cancel_reservation():
     # Return result as json
     return jsonify(result)
 
+
+@app.route('/list_room/', methods=['GET'])
+def list_room():
+    # Retrieve the id from url parameter
+    hotel = request.args.get('hotel_id')
+    arrive = request.args.get('arrival_date')
+    depart = request.args.get('departure_date')
+
+    # Run Validation Code
+    result = utils.list_room_validation(hotel=hotel, arrive=arrive, depart=depart, db=db)
+
+    # Return result as json
+    return jsonify(result)
+
+
 # Test our server State
 @app.route('/')
 def index():

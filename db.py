@@ -185,3 +185,30 @@ class Db:
             print(f"There is an Error connecting to to the db, please try again later.")
             return False
 
+    def inventory(self, hotel, date):
+        data = {}
+        if self.set_db_connection():
+            query = "SELECT rooms FROM hotels where hotelid={}".format(hotel)
+            status, result = self.exec_query(query=query)
+            if status is False:
+                return False, result
+            else:
+                dic = result[0][0]
+                for room in dic.keys():
+                    data[room] = {"available": dic[room], "occupied": 0}
+            query = "SELECT roomtype, COUNT(roomtype) FROM reservations WHERE hotelid={} " \
+                    "AND arrivaldate<='{}' AND departuredate>='{}' AND status='Active' " \
+                    "GROUP BY roomtype".format(hotel, date, date)
+            status, result = self.exec_query(query=query)
+            if status is False:
+                if result["ERROR"] == "There is no rows that match the parameters provided":
+                    return True, data
+                else:
+                    return False, result
+            else:
+                for room in result:
+                    data[room[0]]['available'] -= room[1]
+                    data[room[0]]['occupied'] += room[1]
+        return True, data
+
+

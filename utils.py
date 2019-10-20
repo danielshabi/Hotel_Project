@@ -1,8 +1,30 @@
 import datetime
 
 
+def check_date(arrive, depart):
+    try:
+        datetime.datetime.strptime(arrive, '%m/%d/%Y')
+    except ValueError:
+        err = "Incorrect arrival date format, should be MM/DD/YYYY"
+        return False, err
+
+    try:
+        datetime.datetime.strptime(depart, '%m/%d/%Y')
+    except ValueError:
+        err = "Incorrect departure date format, should be MM/DD/YYYY"
+        return False, err
+
+    if (datetime.datetime.strptime(arrive, '%m/%d/%Y').date() >= datetime.datetime.strptime(depart, '%m/%d/%Y').date())\
+        or (datetime.datetime.strptime(arrive, '%m/%d/%Y').date() <= datetime.datetime.today().date()) \
+            or (datetime.datetime.strptime(depart, '%m/%d/%Y').date() <= datetime.datetime.today().date()):
+        err = "Error: please make sure the arrival date is at least one day before departure and that the" \
+                          " reservation is in the future and not today or in the past"
+        return False, err
+    return True, ""
+
+
 def get_reservation_validation(res_id, db):
-    result = {"DATA": {}, "STATUS": "Fail"}
+    result = {"DATA": {}, "STATUS": "FAILED"}
 
     # Check if user sent an id at all
     if not res_id:
@@ -19,8 +41,8 @@ def get_reservation_validation(res_id, db):
 
 
 def set_reservation_validation(json_data, db):
-    result = {"STATUS": "Fail", "METHOD": "POST", "DATA": {}}
-    success = {"STATUS": "Success", "METHOD": "POST"}
+    result = {"STATUS": "FAILED", "DATA": {}}
+    success = {"STATUS": "SUCCESS"}
 
     if not all(x in json_data.keys() for x in ['hotel_id', 'arrival_date', 'departure_date', 'room_type']):
         result["ERROR"] = "Make sure all parameters delivered (hotel_id/arrival_date/departure_date/room_type)."
@@ -35,23 +57,9 @@ def set_reservation_validation(json_data, db):
         result["ERROR"] = "Hotel's id must be numeric."
         return result
 
-    try:
-        datetime.datetime.strptime(arrive, '%m/%d/%Y')
-    except ValueError:
-        result["ERROR"] = "Incorrect arrival date format, should be MM/DD/YYYY"
-        return result
-
-    try:
-        datetime.datetime.strptime(depart, '%m/%d/%Y')
-    except ValueError:
-        result["ERROR"] = "Incorrect departure date format, should be MM/DD/YYYY"
-        return result
-
-    if (datetime.datetime.strptime(arrive, '%m/%d/%Y').date() >= datetime.datetime.strptime(depart, '%m/%d/%Y').date())\
-        or (datetime.datetime.strptime(arrive, '%m/%d/%Y').date() <= datetime.datetime.today().date()) \
-            or (datetime.datetime.strptime(depart, '%m/%d/%Y').date() <= datetime.datetime.today().date()):
-        result["ERROR"] = "Error: please make sure the arrival date is at least one day before departure and that the" \
-                          " reservation is in the future and not today or in the past"
+    status, err = check_date(arrive=arrive, depart=depart)
+    if status is False:
+        result["ERROR"] = err
         return result
 
     if type(room) is int:
@@ -82,8 +90,8 @@ def set_reservation_validation(json_data, db):
 
 
 def cancel_reservation_validation(res_id, db):
-    result = {"STATUS": "Fail", "METHOD": "POST"}
-    success = {"STATUS": "Success", "METHOD": "POST"}
+    result = {"STATUS": "FAILED"}
+    success = {"STATUS": "SUCCESS"}
 
     # Check if user sent an id at all
     if not res_id:
@@ -93,3 +101,34 @@ def cancel_reservation_validation(res_id, db):
         result["ERROR"] = "id must be numeric."
 
     return db.cancel_reservation(res_id=res_id)
+
+
+def list_room_validation(hotel, arrive, depart, db):
+    result = {"DATA": {}, "STATUS": "FAILED"}
+    success = {"STATUS": "SUCCESS"}
+
+    # Check if user sent all params at all
+    if not hotel or not arrive or not depart:
+        result["ERROR"] = "missing parameters, make sure you provided: hotel_id/arrival_date/departure_date"
+
+    # Check if the user entered a number not a name
+    if not str(hotel).isdigit():
+        result["ERROR"] = "id must be numeric."
+
+    status, err = check_date(arrive=arrive, depart=depart)
+    if status is False:
+        result["ERROR"] = err
+        return result
+    arrive_date = datetime.datetime.strptime(arrive, '%m/%d/%Y')
+    depart_date = datetime.datetime.strptime(depart, '%m/%d/%Y')
+    data = {}
+    while arrive_date <= depart_date:
+        res, inventory = db.inventory(hotel=hotel, date=arrive)
+        if res is False:
+            return inventory
+        else:
+            data[arrive] = inventory
+            arrive_date = arrive_date + datetime.timedelta(days=1)
+            arrive = arrive_date.strftime('%m/%d/%Y')
+    success["DATA"] = data
+    return success
