@@ -9,7 +9,7 @@ db = Db()
 """
 Endpoint For Getting Reservations By Id
 """
-@app.route('/get_reservation/', methods=['GET'])
+@app.route('/get_reservation', methods=['GET'])
 def get_reservation():
     # Retrieve the id from url parameter
     res_id = request.args.get("id", None)
@@ -22,7 +22,7 @@ def get_reservation():
 """
 Endpoint For Creating New Reservation
 """
-@app.route('/set_reservation/', methods=['POST'])
+@app.route('/set_reservation', methods=['POST'])
 def set_reservation():
     # Retrieve the parameters as dict from user's json
     json_data = request.get_json()
@@ -37,7 +37,7 @@ def set_reservation():
 """
 Endpoint For Cancelling Reservation
 """
-@app.route('/cancel_reservation/', methods=['POST'])
+@app.route('/cancel_reservation', methods=['POST'])
 def cancel_reservation():
     # Retrieve the id from url parameter
     res_id = request.args.get('id')
@@ -52,7 +52,7 @@ def cancel_reservation():
 """
 Endpoint For Listing Hotel's Inventory
 """
-@app.route('/list_room/', methods=['GET'])
+@app.route('/list_room', methods=['GET'])
 def list_room():
     # Retrieve the id from url parameter
     hotel = request.args.get('hotel_id')
