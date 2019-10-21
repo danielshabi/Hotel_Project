@@ -188,7 +188,7 @@ class Db:
             try:
                 self.db.execute(query)
                 self.conn.commit()
-                print("Table Created Successfully")
+                print("Reservation Created Successfully")
             except (Exception, psycopg2.Error) as e:
                 print(f"Failed in create query: {e}")
                 self.close_db_connection()
@@ -266,5 +266,19 @@ class Db:
                     data[room[0]]['available'] -= room[1]
                     data[room[0]]['occupied'] += room[1]
         return True, data
+
+    def clean_reservations(self):
+        if self.set_db_connection():
+            query = "TRUNCATE TABLE reservations"
+            try:
+                self.db.execute(query)
+                self.conn.commit()
+                return True
+            except (Exception, psycopg2.Error) as e:
+                print(f"Failed in query: {e}")
+                self.close_db_connection()
+                return False
+        else:
+            return False
 
 
