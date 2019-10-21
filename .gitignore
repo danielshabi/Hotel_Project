@@ -1,3 +1,4 @@
 .idea/*
 win_env/*
 venv/*
+__pycache__/*
