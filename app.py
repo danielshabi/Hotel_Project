@@ -3,12 +3,13 @@ from flask import Flask, request, jsonify
 from db import Db
 import utils
 
+db = Db()
+
 
 def create_app():
     """Create and configure an instance of the Flask application."""
 
     app = Flask(__name__)
-    db = Db()
 
     def get_reservation():
         # Retrieve the id from url parameter
@@ -67,7 +68,8 @@ def create_app():
     return app
 
 
+application = create_app()
+
 if __name__ == '__main__':
-    application = create_app()
     # Threaded option to enable multiple instances for multiple user access support
     application.run(threaded=True, port=5000)
